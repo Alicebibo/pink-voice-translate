@@ -89,28 +89,23 @@
     </section>
 
     <section class="convo-panel" id="convoPanel" hidden>
-      <div class="convo-side convo-top" data-role="target">
-        <span class="convo-lang" id="convoTargetLabel">日文</span>
-        <button class="convo-mic" id="convoMicTarget" aria-label="用目標語言說話">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
-            <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5.5A3.5 3.5 0 0 0 12 15Z" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 18.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
+      <button class="convo-turn" id="convoTurnLabel" title="點擊可手動切換說話方">
+        🎤 輪到 <span id="convoTurnLangName">中文</span> 說話
+      </button>
 
       <div class="convo-feed" id="convoFeed">
-        <p class="convo-empty" id="convoEmpty">點擊上方或下方的麥克風，開始雙語即時對話吧！</p>
+        <p class="convo-empty" id="convoEmpty">點擊下方麥克風，開始雙語即時對話吧！</p>
       </div>
 
-      <div class="convo-side convo-bottom" data-role="source">
-        <button class="convo-mic" id="convoMicSource" aria-label="用來源語言說話">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
-            <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5.5A3.5 3.5 0 0 0 12 15Z" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 18.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <div class="mic-wrap" id="convoMicWrap">
+        <div class="mic-ring ring1"></div>
+        <div class="mic-ring ring2"></div>
+        <button class="mic-btn" id="convoMic" aria-label="開始對話">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none">
+            <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5.5A3.5 3.5 0 0 0 12 15Z" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 18.5V21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
           </svg>
         </button>
-        <span class="convo-lang" id="convoSourceLabel">中文</span>
       </div>
     </section>
 

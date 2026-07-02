@@ -404,49 +404,27 @@ body {
   gap: 10px;
 }
 
-.convo-side {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.convo-top { flex-direction: row-reverse; }
-
-.convo-lang {
+.convo-turn {
+  align-self: center;
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: 13px;
   color: var(--pink-600);
   background: var(--panel-solid);
   border: 1px solid var(--panel-border);
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 999px;
-}
-
-.convo-mic {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  background: linear-gradient(150deg, var(--pink-300), var(--pink-500));
-  color: #fff;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 20px -6px rgba(248, 84, 154, 0.5);
-  transition: transform .15s ease, box-shadow .2s ease;
+  box-shadow: 0 4px 14px -8px rgba(255, 111, 174, 0.4);
 }
-.convo-mic:hover { transform: scale(1.06); }
-.convo-mic.listening {
-  animation: pulse-scale 1.2s ease-in-out infinite;
-  background: linear-gradient(150deg, var(--pink-400), var(--pink-700));
+.convo-turn:hover { box-shadow: var(--shadow-soft); }
+
+#convoMicWrap {
+  width: 120px;
+  height: 120px;
+  margin: 10px auto 4px;
 }
-@keyframes pulse-scale {
-  0%, 100% { box-shadow: 0 8px 20px -6px rgba(248, 84, 154, 0.5); }
-  50% { box-shadow: 0 8px 30px -2px rgba(248, 84, 154, 0.8); }
-}
+#convoMicWrap .mic-btn { width: 80px; height: 80px; }
 
 .convo-feed {
   min-height: 140px;

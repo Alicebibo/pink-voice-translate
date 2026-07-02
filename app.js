@@ -24,10 +24,10 @@
     convoPanel: document.getElementById("convoPanel"),
     convoFeed: document.getElementById("convoFeed"),
     convoEmpty: document.getElementById("convoEmpty"),
-    convoMicSource: document.getElementById("convoMicSource"),
-    convoMicTarget: document.getElementById("convoMicTarget"),
-    convoSourceLabel: document.getElementById("convoSourceLabel"),
-    convoTargetLabel: document.getElementById("convoTargetLabel"),
+    convoMicWrap: document.getElementById("convoMicWrap"),
+    convoMic: document.getElementById("convoMic"),
+    convoTurnLabel: document.getElementById("convoTurnLabel"),
+    convoTurnLangName: document.getElementById("convoTurnLangName"),
     statusText: document.getElementById("statusText"),
     hintText: document.getElementById("hintText"),
     sourceLangBtn: document.getElementById("sourceLangBtn"),
@@ -57,7 +57,8 @@
     mode: "voice", // "voice" | "text" | "convo"
     listening: false,
     thinking: false,
-    convoRole: null, // "source" | "target" | null
+    convoTurn: "source", // "source" | "target" — whose turn to speak
+    convoListening: false,
     modalRole: null,
     lastUtterance: "",
     lastTargetSpeech: "zh-TW",
@@ -67,7 +68,7 @@
   const IDLE_HINT = {
     voice: "選擇語言對，說話即自動翻譯並朗讀",
     text: "選擇語言對，輸入文字後按翻譯",
-    convo: "雙方各自點自己的麥克風說話，會自動翻譯給對方聽",
+    convo: "輪流點麥克風說話，翻譯完會自動換下一位",
   };
 
   function toast(msg, ms = 2600) {
@@ -85,8 +86,12 @@
     els.langBadgeText.textContent = `${src.name}${tgt.name} · VOICE`;
     els.origLabel.textContent = src.name;
     els.transLabel.textContent = tgt.name;
-    els.convoSourceLabel.textContent = src.name;
-    els.convoTargetLabel.textContent = tgt.name;
+    renderConvoTurn();
+  }
+
+  function renderConvoTurn() {
+    const lang = state.convoTurn === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
+    els.convoTurnLangName.textContent = lang.name;
   }
 
   function renderHistory() {
@@ -233,17 +238,23 @@
   // ---- Conversation mode ----
   let convoRecognizer = null;
 
-  function startConvoListening(role) {
+  function toggleConvoTurn() {
+    if (state.convoListening) return;
+    state.convoTurn = state.convoTurn === "source" ? "target" : "source";
+    renderConvoTurn();
+  }
+
+  function startConvoListening() {
     if (!SpeechRecognitionImpl) {
       toast("此瀏覽器不支援語音辨識，建議使用 Chrome");
       return;
     }
-    if (state.convoRole) {
+    if (state.convoListening) {
       convoRecognizer && convoRecognizer.stop();
       return;
     }
-    const speaker = role === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
-    const micEl = role === "source" ? els.convoMicSource : els.convoMicTarget;
+    const fromRole = state.convoTurn;
+    const speaker = fromRole === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
 
     convoRecognizer = new SpeechRecognitionImpl();
     convoRecognizer.lang = speaker.speech;
@@ -251,13 +262,13 @@
     convoRecognizer.maxAlternatives = 1;
 
     convoRecognizer.onstart = () => {
-      state.convoRole = role;
-      micEl.classList.add("listening");
+      state.convoListening = true;
+      els.convoMicWrap.classList.add("listening");
       setStatus("聆聽中…", "請開始說話，說完會自動翻譯給對方");
     };
     convoRecognizer.onerror = (e) => {
-      state.convoRole = null;
-      micEl.classList.remove("listening");
+      state.convoListening = false;
+      els.convoMicWrap.classList.remove("listening");
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
         toast("請允許使用麥克風權限");
       } else if (e.error === "no-speech") {
@@ -265,15 +276,15 @@
       } else {
         toast("語音辨識發生錯誤：" + e.error);
       }
-      setStatus("點擊任一麥克風開始對話", IDLE_HINT.convo);
+      setStatus("點擊下方麥克風開始對話", IDLE_HINT.convo);
     };
     convoRecognizer.onend = () => {
-      state.convoRole = null;
-      micEl.classList.remove("listening");
+      state.convoListening = false;
+      els.convoMicWrap.classList.remove("listening");
     };
     convoRecognizer.onresult = (e) => {
       const text = e.results[0][0].transcript.trim();
-      if (text) handleConvoTranslate(text, role);
+      if (text) handleConvoTranslate(text, fromRole);
     };
 
     try {
@@ -286,17 +297,22 @@
   async function handleConvoTranslate(text, fromRole) {
     const from = fromRole === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
     const to = fromRole === "source" ? LANGS[state.targetIdx] : LANGS[state.sourceIdx];
+    els.convoMicWrap.classList.add("thinking");
     setStatus("翻譯中…", IDLE_HINT.convo);
 
     try {
       const translated = await translateText(text, from.code, to.code);
       appendConvoMessage(text, translated, fromRole);
-      setStatus("點擊任一麥克風繼續對話", IDLE_HINT.convo);
+      state.convoTurn = fromRole === "source" ? "target" : "source";
+      renderConvoTurn();
+      setStatus("點擊下方麥克風繼續對話", IDLE_HINT.convo);
       speak(translated, to.speech);
       saveHistory({ orig: text, trans: translated, src: from.name, tgt: to.name });
     } catch (err) {
-      setStatus("點擊任一麥克風開始對話", IDLE_HINT.convo);
+      setStatus("點擊下方麥克風開始對話", IDLE_HINT.convo);
       toast("翻譯失敗，請稍後再試");
+    } finally {
+      els.convoMicWrap.classList.remove("thinking");
     }
   }
 
@@ -361,13 +377,13 @@
   const IDLE_STATUS = {
     voice: "點擊下方麥克風開始",
     text: "輸入文字開始翻譯",
-    convo: "點擊任一麥克風開始對話",
+    convo: "點擊下方麥克風開始對話",
   };
 
   function setMode(mode) {
     if (state.mode === mode) return;
     if (state.listening) recognizer && recognizer.stop();
-    if (state.convoRole) convoRecognizer && convoRecognizer.stop();
+    if (state.convoListening) convoRecognizer && convoRecognizer.stop();
     state.mode = mode;
     els.voicePanel.hidden = mode !== "voice";
     els.textPanel.hidden = mode !== "text";
@@ -395,8 +411,8 @@
   els.voiceModeBtn.addEventListener("click", () => setMode("voice"));
   els.textModeBtn.addEventListener("click", () => setMode("text"));
   els.convoModeBtn.addEventListener("click", () => setMode("convo"));
-  els.convoMicSource.addEventListener("click", () => startConvoListening("source"));
-  els.convoMicTarget.addEventListener("click", () => startConvoListening("target"));
+  els.convoMic.addEventListener("click", startConvoListening);
+  els.convoTurnLabel.addEventListener("click", toggleConvoTurn);
   els.translateBtn.addEventListener("click", submitTextTranslate);
   els.textInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
