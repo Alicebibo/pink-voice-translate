@@ -33,7 +33,18 @@
       <button class="lang-pill" id="targetLangBtn" data-role="target">日文</button>
     </div>
 
-    <div class="mic-wrap">
+    <div class="mode-toggle" role="tablist">
+      <button class="mode-btn active" id="voiceModeBtn" role="tab" aria-selected="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5.5A3.5 3.5 0 0 0 12 15Z" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 18.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        語音輸入
+      </button>
+      <button class="mode-btn" id="textModeBtn" role="tab" aria-selected="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        文字輸入
+      </button>
+    </div>
+
+    <div class="mic-wrap" id="voicePanel">
       <div class="mic-ring ring1"></div>
       <div class="mic-ring ring2"></div>
       <button class="mic-btn" id="micBtn" aria-label="開始說話">
@@ -41,6 +52,14 @@
           <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5.5A3.5 3.5 0 0 0 12 15Z" stroke="currentColor" stroke-width="1.7"/>
           <path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 18.5V21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
         </svg>
+      </button>
+    </div>
+
+    <div class="text-panel" id="textPanel" hidden>
+      <textarea id="textInput" class="text-input" rows="3" placeholder="輸入文字後按翻譯…"></textarea>
+      <button class="translate-btn" id="translateBtn">
+        翻譯
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
 

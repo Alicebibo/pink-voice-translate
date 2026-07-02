@@ -14,6 +14,12 @@
   const els = {
     micWrap: document.querySelector(".mic-wrap"),
     micBtn: document.getElementById("micBtn"),
+    voicePanel: document.getElementById("voicePanel"),
+    textPanel: document.getElementById("textPanel"),
+    voiceModeBtn: document.getElementById("voiceModeBtn"),
+    textModeBtn: document.getElementById("textModeBtn"),
+    textInput: document.getElementById("textInput"),
+    translateBtn: document.getElementById("translateBtn"),
     statusText: document.getElementById("statusText"),
     hintText: document.getElementById("hintText"),
     sourceLangBtn: document.getElementById("sourceLangBtn"),
@@ -40,12 +46,18 @@
   const state = {
     sourceIdx: 0, // 中文
     targetIdx: 1, // 日文
+    mode: "voice", // "voice" | "text"
     listening: false,
     thinking: false,
     modalRole: null,
     lastUtterance: "",
     lastTargetSpeech: "zh-TW",
     history: JSON.parse(localStorage.getItem("voiceTranslateHistory") || "[]"),
+  };
+
+  const IDLE_HINT = {
+    voice: "選擇語言對，說話即自動翻譯並朗讀",
+    text: "選擇語言對，輸入文字後按翻譯",
   };
 
   function toast(msg, ms = 2600) {
@@ -110,7 +122,7 @@
     if (on) {
       setStatus("聆聽中…", "請開始說話，說完會自動翻譯");
     } else if (!state.thinking) {
-      setStatus("點擊下方麥克風開始", "選擇語言對，說話即自動翻譯並朗讀");
+      setStatus("點擊下方麥克風開始", IDLE_HINT.voice);
     }
   }
 
@@ -149,7 +161,7 @@
     recognizer.onend = () => setListening(false);
     recognizer.onresult = (e) => {
       const text = e.results[0][0].transcript.trim();
-      if (text) handleRecognized(text);
+      if (text) handleTranslate(text);
     };
 
     try {
@@ -159,9 +171,10 @@
     }
   }
 
-  async function handleRecognized(text) {
+  async function handleTranslate(text) {
     const src = LANGS[state.sourceIdx];
     const tgt = LANGS[state.targetIdx];
+    const idleLabel = state.mode === "voice" ? "點擊下方麥克風開始" : "輸入文字開始翻譯";
 
     els.transcript.hidden = false;
     els.origText.textContent = text;
@@ -172,13 +185,15 @@
       const translated = await translateText(text, src.code, tgt.code);
       els.transText.textContent = translated;
       setThinking(false);
-      setStatus("翻譯完成", "點擊下方麥克風繼續對話");
+      setStatus("翻譯完成", state.mode === "voice" ? "點擊下方麥克風繼續對話" : "輸入下一句文字繼續翻譯");
       speak(translated, tgt.speech);
       saveHistory({ orig: text, trans: translated, src: src.name, tgt: tgt.name });
     } catch (err) {
       setThinking(false);
-      setStatus("點擊下方麥克風開始", "選擇語言對，說話即自動翻譯並朗讀");
+      setStatus(idleLabel, IDLE_HINT[state.mode]);
       toast("翻譯失敗，請稍後再試");
+    } finally {
+      if (state.mode === "text") els.translateBtn.disabled = false;
     }
   }
 
@@ -244,8 +259,39 @@
     }
   }
 
+  // ---- Mode switching ----
+  function setMode(mode) {
+    if (state.mode === mode) return;
+    if (state.listening) recognizer && recognizer.stop();
+    state.mode = mode;
+    els.voicePanel.hidden = mode !== "voice";
+    els.textPanel.hidden = mode !== "text";
+    els.voiceModeBtn.classList.toggle("active", mode === "voice");
+    els.voiceModeBtn.setAttribute("aria-selected", mode === "voice");
+    els.textModeBtn.classList.toggle("active", mode === "text");
+    els.textModeBtn.setAttribute("aria-selected", mode === "text");
+    setStatus(mode === "voice" ? "點擊下方麥克風開始" : "輸入文字開始翻譯", IDLE_HINT[mode]);
+    if (mode === "text") els.textInput.focus();
+  }
+
+  function submitTextTranslate() {
+    const text = els.textInput.value.trim();
+    if (!text) return;
+    els.translateBtn.disabled = true;
+    handleTranslate(text);
+  }
+
   // ---- Events ----
   els.micBtn.addEventListener("click", startListening);
+  els.voiceModeBtn.addEventListener("click", () => setMode("voice"));
+  els.textModeBtn.addEventListener("click", () => setMode("text"));
+  els.translateBtn.addEventListener("click", submitTextTranslate);
+  els.textInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submitTextTranslate();
+    }
+  });
   els.swapBtn.addEventListener("click", swapLangs);
   els.sourceLangBtn.addEventListener("click", () => openLangModal("source"));
   els.targetLangBtn.addEventListener("click", () => openLangModal("target"));
@@ -267,6 +313,9 @@
   renderHistory();
 
   if (!SpeechRecognitionImpl) {
-    setStatus("此瀏覽器不支援語音辨識", "請改用電腦版 Chrome 開啟本頁");
+    els.voiceModeBtn.disabled = true;
+    els.voiceModeBtn.title = "此瀏覽器不支援語音辨識";
+    setMode("text");
+    toast("此瀏覽器不支援語音辨識，已切換為文字輸入");
   }
 })();

@@ -140,6 +140,42 @@ body {
 }
 .swap-btn:hover { background: rgba(255, 79, 168, 0.12); transform: rotate(180deg); }
 
+.mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-top: 34px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-lo);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--pink-400), var(--pink-600));
+  color: #2a0618;
+  font-weight: 600;
+}
+
+.mode-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
 .mic-wrap {
   position: relative;
   width: 168px;
@@ -149,6 +185,57 @@ body {
   justify-content: center;
   margin: 56px 0 30px;
 }
+
+.mic-wrap[hidden] { display: none; }
+
+.text-panel {
+  width: 100%;
+  margin: 40px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.text-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 84px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--text-hi);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.text-input:focus {
+  outline: none;
+  border-color: var(--pink-400);
+  box-shadow: 0 0 0 3px rgba(255, 79, 168, 0.18);
+}
+.text-input::placeholder { color: var(--text-lo); }
+
+.translate-btn {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--pink-300), var(--pink-600));
+  color: #2a0618;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -6px rgba(236, 31, 142, 0.55);
+  transition: transform .15s ease;
+}
+.translate-btn:hover { transform: translateY(-1px); }
+.translate-btn:active { transform: translateY(0); }
+.translate-btn:disabled { opacity: .6; cursor: default; transform: none; }
 
 .mic-ring {
   position: absolute;
