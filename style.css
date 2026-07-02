@@ -81,10 +81,26 @@ body {
 .balloon1 { top: 6%; left: 5%; width: 44px; animation-duration: 7s; }
 .balloon2 { top: 12%; right: 8%; width: 34px; animation-duration: 8.5s; animation-delay: .8s; }
 .balloon3 { top: 3%; right: 24%; width: 26px; animation-duration: 6s; animation-delay: 1.6s; }
+.balloon4 { top: 42%; left: 3%; width: 30px; animation-duration: 7.5s; animation-delay: .4s; }
+.balloon5 { top: 58%; right: 4%; width: 28px; animation-duration: 9s; animation-delay: 1.2s; }
+.balloon6 { top: 26%; left: 16%; width: 22px; animation-duration: 6.8s; animation-delay: 2s; }
 
 @keyframes floaty {
   0%, 100% { transform: translateY(0) rotate(-2deg); }
   50% { transform: translateY(-16px) rotate(2deg); }
+}
+
+.sparkle {
+  width: 18px;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.sparkle1 { top: 20%; left: 30%; animation-delay: 0s; }
+.sparkle2 { top: 8%; right: 34%; width: 14px; animation-delay: .8s; }
+.sparkle3 { top: 48%; left: 12%; width: 12px; animation-delay: 1.5s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(15deg); }
 }
 
 .bear {
@@ -102,6 +118,13 @@ body {
   right: -6px;
   animation: sway 5.5s ease-in-out infinite reverse;
 }
+.bear-top {
+  width: 68px;
+  top: -18px;
+  left: 50%;
+  margin-left: -34px;
+  animation: sway 6s ease-in-out infinite;
+}
 
 @keyframes sway {
   0%, 100% { transform: rotate(-3deg); }
@@ -113,8 +136,13 @@ body {
   .balloon1 { width: 32px; }
   .balloon2 { width: 24px; }
   .balloon3 { width: 20px; }
+  .balloon4 { width: 22px; }
+  .balloon5 { width: 20px; }
+  .balloon6 { display: none; }
+  .sparkle2, .sparkle3 { display: none; }
   .bear-left { width: 66px; }
   .bear-right { width: 54px; }
+  .bear-top { width: 48px; margin-left: -24px; }
 }
 
 .topbar {
