@@ -411,7 +411,7 @@ body {
   gap: 10px;
 }
 
-.convo-top { transform: rotate(180deg); }
+.convo-top { flex-direction: row-reverse; }
 
 .convo-lang {
   font-family: var(--font-ui);
@@ -484,7 +484,6 @@ body {
   border-bottom-right-radius: 4px;
   background: linear-gradient(135deg, var(--pink-50), #fff);
   border-color: var(--pink-200);
-  transform: rotate(180deg);
 }
 
 .convo-msg .convo-orig {
