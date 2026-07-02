@@ -49,6 +49,7 @@
     modalSub: document.getElementById("modalSub"),
     modalClose: document.getElementById("modalClose"),
     toast: document.getElementById("toast"),
+    unsupportedNote: document.getElementById("unsupportedNote"),
   };
 
   const state = {
@@ -460,7 +461,7 @@
     els.voiceModeBtn.title = "此瀏覽器不支援語音辨識";
     els.convoModeBtn.disabled = true;
     els.convoModeBtn.title = "此瀏覽器不支援語音辨識";
+    els.unsupportedNote.hidden = false;
     setMode("text");
-    toast("此瀏覽器不支援語音辨識，已切換為文字輸入");
   }
 })();
