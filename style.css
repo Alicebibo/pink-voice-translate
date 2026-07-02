@@ -68,6 +68,55 @@ body {
   background: radial-gradient(circle at 50% 50%, #ffe0f0, transparent 70%);
 }
 
+.deco {
+  position: absolute;
+  overflow: visible;
+}
+
+.balloon {
+  width: 46px;
+  filter: drop-shadow(0 8px 14px rgba(230, 57, 122, 0.25));
+  animation: floaty 6.5s ease-in-out infinite;
+}
+.balloon1 { top: 6%; left: 5%; width: 44px; animation-duration: 7s; }
+.balloon2 { top: 12%; right: 8%; width: 34px; animation-duration: 8.5s; animation-delay: .8s; }
+.balloon3 { top: 3%; right: 24%; width: 26px; animation-duration: 6s; animation-delay: 1.6s; }
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-16px) rotate(2deg); }
+}
+
+.bear {
+  filter: drop-shadow(0 6px 10px rgba(90, 34, 70, 0.15));
+}
+.bear-left {
+  width: 92px;
+  bottom: -14px;
+  left: -8px;
+  animation: sway 5s ease-in-out infinite;
+}
+.bear-right {
+  width: 74px;
+  bottom: -12px;
+  right: -6px;
+  animation: sway 5.5s ease-in-out infinite reverse;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@media (max-width: 560px) {
+  .balloon { opacity: 0.7; }
+  .balloon1 { width: 32px; }
+  .balloon2 { width: 24px; }
+  .balloon3 { width: 20px; }
+  .bear-left { width: 66px; }
+  .bear-right { width: 54px; }
+}
+
 .topbar {
   position: relative;
   z-index: 2;
