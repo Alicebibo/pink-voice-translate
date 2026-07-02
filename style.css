@@ -455,6 +455,7 @@ body {
 
 .convo-turn {
   align-self: center;
+  margin: 0;
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: 13px;
@@ -463,10 +464,8 @@ body {
   border: 1px solid var(--panel-border);
   padding: 8px 16px;
   border-radius: 999px;
-  cursor: pointer;
   box-shadow: 0 4px 14px -8px rgba(255, 111, 174, 0.4);
 }
-.convo-turn:hover { box-shadow: var(--shadow-soft); }
 
 #convoMicWrap {
   width: 120px;

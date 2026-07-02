@@ -86,12 +86,24 @@
     els.langBadgeText.textContent = `${src.name}${tgt.name} · VOICE`;
     els.origLabel.textContent = src.name;
     els.transLabel.textContent = tgt.name;
-    renderConvoTurn();
+    resetConvoDetected();
   }
 
-  function renderConvoTurn() {
-    const lang = state.convoTurn === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
-    els.convoTurnLangName.textContent = lang.name;
+  function resetConvoDetected() {
+    els.convoTurnLangName.textContent = "尚未開始";
+  }
+
+  // Guess which of the two configured languages a piece of text is written in,
+  // based on Unicode script ranges — lets conversation mode auto-pick direction
+  // instead of requiring the user to track whose turn it is.
+  function detectScript(text) {
+    if (/[぀-ヿㇰ-ㇿ]/.test(text)) return "ja";
+    if (/[가-힣]/.test(text)) return "ko";
+    if (/[฀-๿]/.test(text)) return "th";
+    if (/[一-鿿]/.test(text)) return "zh";
+    if (/[ăâđêôơưìảãạ]/i.test(text)) return "vi";
+    if (/[ñáéíóúü¿¡]/i.test(text)) return "es";
+    return "en";
   }
 
   function renderHistory() {
@@ -238,12 +250,6 @@
   // ---- Conversation mode ----
   let convoRecognizer = null;
 
-  function toggleConvoTurn() {
-    if (state.convoListening) return;
-    state.convoTurn = state.convoTurn === "source" ? "target" : "source";
-    renderConvoTurn();
-  }
-
   function startConvoListening() {
     if (!SpeechRecognitionImpl) {
       toast("此瀏覽器不支援語音辨識，建議使用 Chrome");
@@ -294,9 +300,19 @@
     }
   }
 
-  async function handleConvoTranslate(text, fromRole) {
-    const from = fromRole === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
-    const to = fromRole === "source" ? LANGS[state.targetIdx] : LANGS[state.sourceIdx];
+  async function handleConvoTranslate(text, assumedRole) {
+    const sourceLang = LANGS[state.sourceIdx];
+    const targetLang = LANGS[state.targetIdx];
+    const detected = detectScript(text);
+
+    // Trust the script detected in the actual text over the pre-recognition guess —
+    // this is what lets the app pick translation direction on its own.
+    let fromRole = assumedRole;
+    if (detected === targetLang.code && detected !== sourceLang.code) fromRole = "target";
+    else if (detected === sourceLang.code && detected !== targetLang.code) fromRole = "source";
+
+    const from = fromRole === "source" ? sourceLang : targetLang;
+    const to = fromRole === "source" ? targetLang : sourceLang;
     els.convoMicWrap.classList.add("thinking");
     setStatus("翻譯中…", IDLE_HINT.convo);
 
@@ -304,7 +320,7 @@
       const translated = await translateText(text, from.code, to.code);
       appendConvoMessage(text, translated, fromRole);
       state.convoTurn = fromRole === "source" ? "target" : "source";
-      renderConvoTurn();
+      els.convoTurnLangName.textContent = from.name;
       setStatus("點擊下方麥克風繼續對話", IDLE_HINT.convo);
       speak(translated, to.speech);
       saveHistory({ orig: text, trans: translated, src: from.name, tgt: to.name });
@@ -412,7 +428,6 @@
   els.textModeBtn.addEventListener("click", () => setMode("text"));
   els.convoModeBtn.addEventListener("click", () => setMode("convo"));
   els.convoMic.addEventListener("click", startConvoListening);
-  els.convoTurnLabel.addEventListener("click", toggleConvoTurn);
   els.translateBtn.addEventListener("click", submitTextTranslate);
   els.textInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
