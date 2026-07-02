@@ -18,8 +18,16 @@
     textPanel: document.getElementById("textPanel"),
     voiceModeBtn: document.getElementById("voiceModeBtn"),
     textModeBtn: document.getElementById("textModeBtn"),
+    convoModeBtn: document.getElementById("convoModeBtn"),
     textInput: document.getElementById("textInput"),
     translateBtn: document.getElementById("translateBtn"),
+    convoPanel: document.getElementById("convoPanel"),
+    convoFeed: document.getElementById("convoFeed"),
+    convoEmpty: document.getElementById("convoEmpty"),
+    convoMicSource: document.getElementById("convoMicSource"),
+    convoMicTarget: document.getElementById("convoMicTarget"),
+    convoSourceLabel: document.getElementById("convoSourceLabel"),
+    convoTargetLabel: document.getElementById("convoTargetLabel"),
     statusText: document.getElementById("statusText"),
     hintText: document.getElementById("hintText"),
     sourceLangBtn: document.getElementById("sourceLangBtn"),
@@ -46,9 +54,10 @@
   const state = {
     sourceIdx: 0, // 中文
     targetIdx: 1, // 日文
-    mode: "voice", // "voice" | "text"
+    mode: "voice", // "voice" | "text" | "convo"
     listening: false,
     thinking: false,
+    convoRole: null, // "source" | "target" | null
     modalRole: null,
     lastUtterance: "",
     lastTargetSpeech: "zh-TW",
@@ -58,6 +67,7 @@
   const IDLE_HINT = {
     voice: "選擇語言對，說話即自動翻譯並朗讀",
     text: "選擇語言對，輸入文字後按翻譯",
+    convo: "雙方各自點自己的麥克風說話，會自動翻譯給對方聽",
   };
 
   function toast(msg, ms = 2600) {
@@ -75,6 +85,8 @@
     els.langBadgeText.textContent = `${src.name}${tgt.name} · VOICE`;
     els.origLabel.textContent = src.name;
     els.transLabel.textContent = tgt.name;
+    els.convoSourceLabel.textContent = src.name;
+    els.convoTargetLabel.textContent = tgt.name;
   }
 
   function renderHistory() {
@@ -218,6 +230,92 @@
     window.speechSynthesis.speak(utter);
   }
 
+  // ---- Conversation mode ----
+  let convoRecognizer = null;
+
+  function startConvoListening(role) {
+    if (!SpeechRecognitionImpl) {
+      toast("此瀏覽器不支援語音辨識，建議使用 Chrome");
+      return;
+    }
+    if (state.convoRole) {
+      convoRecognizer && convoRecognizer.stop();
+      return;
+    }
+    const speaker = role === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
+    const micEl = role === "source" ? els.convoMicSource : els.convoMicTarget;
+
+    convoRecognizer = new SpeechRecognitionImpl();
+    convoRecognizer.lang = speaker.speech;
+    convoRecognizer.interimResults = false;
+    convoRecognizer.maxAlternatives = 1;
+
+    convoRecognizer.onstart = () => {
+      state.convoRole = role;
+      micEl.classList.add("listening");
+      setStatus("聆聽中…", "請開始說話，說完會自動翻譯給對方");
+    };
+    convoRecognizer.onerror = (e) => {
+      state.convoRole = null;
+      micEl.classList.remove("listening");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast("請允許使用麥克風權限");
+      } else if (e.error === "no-speech") {
+        toast("沒有偵測到語音，請再試一次");
+      } else {
+        toast("語音辨識發生錯誤：" + e.error);
+      }
+      setStatus("點擊任一麥克風開始對話", IDLE_HINT.convo);
+    };
+    convoRecognizer.onend = () => {
+      state.convoRole = null;
+      micEl.classList.remove("listening");
+    };
+    convoRecognizer.onresult = (e) => {
+      const text = e.results[0][0].transcript.trim();
+      if (text) handleConvoTranslate(text, role);
+    };
+
+    try {
+      convoRecognizer.start();
+    } catch (err) {
+      toast("無法啟動麥克風");
+    }
+  }
+
+  async function handleConvoTranslate(text, fromRole) {
+    const from = fromRole === "source" ? LANGS[state.sourceIdx] : LANGS[state.targetIdx];
+    const to = fromRole === "source" ? LANGS[state.targetIdx] : LANGS[state.sourceIdx];
+    setStatus("翻譯中…", IDLE_HINT.convo);
+
+    try {
+      const translated = await translateText(text, from.code, to.code);
+      appendConvoMessage(text, translated, fromRole);
+      setStatus("點擊任一麥克風繼續對話", IDLE_HINT.convo);
+      speak(translated, to.speech);
+      saveHistory({ orig: text, trans: translated, src: from.name, tgt: to.name });
+    } catch (err) {
+      setStatus("點擊任一麥克風開始對話", IDLE_HINT.convo);
+      toast("翻譯失敗，請稍後再試");
+    }
+  }
+
+  function appendConvoMessage(orig, trans, fromRole) {
+    els.convoEmpty.hidden = true;
+    const div = document.createElement("div");
+    div.className = `convo-msg from-${fromRole}`;
+    const p1 = document.createElement("p");
+    p1.className = "convo-orig";
+    p1.textContent = orig;
+    const p2 = document.createElement("p");
+    p2.className = "convo-trans";
+    p2.textContent = trans;
+    div.appendChild(p1);
+    div.appendChild(p2);
+    els.convoFeed.appendChild(div);
+    els.convoFeed.scrollTop = els.convoFeed.scrollHeight;
+  }
+
   // ---- Language modal ----
   function openLangModal(role) {
     state.modalRole = role;
@@ -260,17 +358,28 @@
   }
 
   // ---- Mode switching ----
+  const IDLE_STATUS = {
+    voice: "點擊下方麥克風開始",
+    text: "輸入文字開始翻譯",
+    convo: "點擊任一麥克風開始對話",
+  };
+
   function setMode(mode) {
     if (state.mode === mode) return;
     if (state.listening) recognizer && recognizer.stop();
+    if (state.convoRole) convoRecognizer && convoRecognizer.stop();
     state.mode = mode;
     els.voicePanel.hidden = mode !== "voice";
     els.textPanel.hidden = mode !== "text";
+    els.convoPanel.hidden = mode !== "convo";
     els.voiceModeBtn.classList.toggle("active", mode === "voice");
     els.voiceModeBtn.setAttribute("aria-selected", mode === "voice");
     els.textModeBtn.classList.toggle("active", mode === "text");
     els.textModeBtn.setAttribute("aria-selected", mode === "text");
-    setStatus(mode === "voice" ? "點擊下方麥克風開始" : "輸入文字開始翻譯", IDLE_HINT[mode]);
+    els.convoModeBtn.classList.toggle("active", mode === "convo");
+    els.convoModeBtn.setAttribute("aria-selected", mode === "convo");
+    els.transcript.hidden = true;
+    setStatus(IDLE_STATUS[mode], IDLE_HINT[mode]);
     if (mode === "text") els.textInput.focus();
   }
 
@@ -285,6 +394,9 @@
   els.micBtn.addEventListener("click", startListening);
   els.voiceModeBtn.addEventListener("click", () => setMode("voice"));
   els.textModeBtn.addEventListener("click", () => setMode("text"));
+  els.convoModeBtn.addEventListener("click", () => setMode("convo"));
+  els.convoMicSource.addEventListener("click", () => startConvoListening("source"));
+  els.convoMicTarget.addEventListener("click", () => startConvoListening("target"));
   els.translateBtn.addEventListener("click", submitTextTranslate);
   els.textInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -315,6 +427,8 @@
   if (!SpeechRecognitionImpl) {
     els.voiceModeBtn.disabled = true;
     els.voiceModeBtn.title = "此瀏覽器不支援語音辨識";
+    els.convoModeBtn.disabled = true;
+    els.convoModeBtn.title = "此瀏覽器不支援語音辨識";
     setMode("text");
     toast("此瀏覽器不支援語音辨識，已切換為文字輸入");
   }
